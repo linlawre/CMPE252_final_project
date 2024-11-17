@@ -1,50 +1,115 @@
+import customtkinter as ctk
 import speech_recognition as sr
 import pyttsx3
+import threading
+import ollama
 
-# Initialize the recognizer
-r = sr.Recognizer()
+
+# Initialize CustomTkinter
+ctk.set_appearance_mode("Dark")  # Modes: "System" (default), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (default), "green", "dark-blue"
 
 
-# Function to convert text to
-# speech
+# Function to convert text to speech
 def SpeakText(command):
-    # Initialize the engine
     engine = pyttsx3.init()
     engine.say(command)
     engine.runAndWait()
 
 
-# Loop infinitely for user to
-# speak
-
-while (1):
-
-    # Exception handling to handle
-    # exceptions at the runtime
-
-
-    # use the microphone as source for input.
-    with sr.Microphone() as source2:
-
-        # wait for a second to let the recognizer
-        # adjust the energy threshold based on
-        # the surrounding noise level
-        r.adjust_for_ambient_noise(source2, duration=0.2)
-
-        # listens for the user's input
-        audio2 = r.listen(source2)
-
-        # Using google to recognize audio
-        MyText = r.recognize_google(audio2)
-        MyText = MyText.lower()
-        print(MyText)
+# Function to query Ollama with the input text
+def query_ollama(input_text):
+    try:
+        # Replace 'model_name' with the specific model in Ollama
+        response = ollama.generate(model="model_name", prompt=input_text)
+        return response.get("response", "Sorry, I couldn't process that.")
+    except Exception as e:
+        return f"Error querying Ollama: {e}"
 
 
+# Main application class
+class ChatApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("Voice-Enabled Chat App")
+        self.geometry("500x600")
+
+        # Chat display frame
+        self.chat_frame = ctk.CTkFrame(self, width=480, height=450, corner_radius=10)
+        self.chat_frame.pack(pady=10, padx=10, fill="both", expand=True)
+
+        # Scrollable chat area
+        self.chat_area = ctk.CTkTextbox(self.chat_frame, wrap="word", state="disabled", height=450)
+        self.chat_area.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Input frame for text entry
+        self.input_frame = ctk.CTkFrame(self)
+        self.input_frame.pack(fill="x", padx=10, pady=5)
+
+        # Entry widget for text input
+        self.message_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Type your message here...")
+        self.message_entry.pack(side="left", padx=5, pady=5, fill="x", expand=True)
+        self.message_entry.bind("<Return>", self.send_message)  # Send message on Enter key
+
+        # Send button
+        self.send_button = ctk.CTkButton(self.input_frame, text="Send", command=self.send_message)
+        self.send_button.pack(side="right", padx=5, pady=5)
+
+        # Start voice recognition in a separate thread
+        self.voice_thread = threading.Thread(target=self.voice_recognition_loop, daemon=True)
+        self.voice_thread.start()
+
+    def send_message(self, event=None):
+        # Get message from the entry widget
+        message = self.message_entry.get().strip()
+        if message:
+            self.display_message("You", message)
+            self.message_entry.delete(0, "end")  # Clear the entry field
+            
+            # Query Ollama and get a response
+            bot_response = query_ollama(message)
+            self.display_message("Bot", bot_response)
+            
+            # Speak the response
+            SpeakText(bot_response)
+
+    def display_message(self, sender, message):
+        # Enable chat area, insert the message, and disable it again
+        self.chat_area.configure(state="normal")
+        self.chat_area.insert("end", f"{sender}: {message}\n")
+        self.chat_area.configure(state="disabled")
+        self.chat_area.see("end")  # Scroll to the bottom
+
+    def voice_recognition_loop(self):
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            self.display_message("System", "Voice recognition started. Speak now!")
+
+            while True:
+                try:
+                    # Listen for user speech
+                    audio = recognizer.listen(source)
+
+                    # Recognize speech using Google
+                    MyText = recognizer.recognize_google(audio).lower()
+                    self.display_message("You (Voice)", MyText)
+
+                    # Query Ollama for a response
+                    bot_response = query_ollama(MyText)
+                    self.display_message("Bot", bot_response)
+
+                    # Speak the response
+                    SpeakText(bot_response)
+
+                except sr.UnknownValueError:
+                    self.display_message("System", "Sorry, I did not understand that.")
+                except sr.RequestError as e:
+                    self.display_message("System", f"API error: {e}")
 
 
-
-
-
-        SpeakText(MyText)
-
-
+# Run the application
+if __name__ == "__main__":
+    app = ChatApp()
+    app.mainloop()

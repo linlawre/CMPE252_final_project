@@ -1,3 +1,3 @@
 # CMPE252_final_project
 
-pip install pyttsx3 pyaudio speechrecognition
+pip install pyttsx3 pyaudio speechrecognition ollama pyttsx3
