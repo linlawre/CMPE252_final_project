@@ -39,6 +39,12 @@ while (1):
         MyText = MyText.lower()
         print(MyText)
 
+
+
+
+
+
+
         SpeakText(MyText)
 
 
