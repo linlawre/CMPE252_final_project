@@ -63,7 +63,7 @@ class ChatApp(ctk.CTk):
         self.language_var = ctk.StringVar(value="en-US")  # Default English
         self.language_menu = ctk.CTkOptionMenu(
             self, 
-            values=["en-US", "zh-CN", "fr-FR", "ja-JP"],  # Available languages
+            values=["en-US", "zh-CN", "vi-VN", "ja-JP"],  # Available languages
             variable=self.language_var,
             command=self.change_language  # Callback when language changes
         )
