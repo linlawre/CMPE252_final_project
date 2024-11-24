@@ -3,6 +3,7 @@ import speech_recognition as sr
 import pyttsx3
 import threading
 from tkinter import Text, END
+from ollama import chat
 
 
 # Initialize CustomTkinter
@@ -76,9 +77,14 @@ class ChatApp(ctk.CTk):
     def send_message(self, event=None):
         # Get message from the entry widget
         message = self.message_entry.get().strip()
+
+
         if message:
             self.display_message("You", message, "user")
             self.message_entry.delete(0, "end")  # Clear the entry field
+
+
+
             self.SpeakText(message)
 
             # Simulate a bot response
@@ -105,8 +111,17 @@ class ChatApp(ctk.CTk):
 
                     # Recognize speech using the selected language
                     MyText = recognizer.recognize_google(audio, language=self.language).lower()
+
+
+                    stream = chat(
+                        model='llama3',
+                        messages=[{'role': 'user', 'content': MyText}],
+                    )
+
+
                     self.display_message("You (Voice)", MyText, "user")
-                    self.SpeakText(MyText)
+                    self.display_message("System", stream['message']['content'], "system")
+                    self.SpeakText(stream['message']['content'])
 
                 except sr.UnknownValueError:
                     self.display_message("System", "Sorry, I did not understand that.", "system")
@@ -117,12 +132,18 @@ class ChatApp(ctk.CTk):
         engine = pyttsx3.init()
         voices = engine.getProperty('voices')
 
-        # Set voice to match the selected language
+        # Find a voice that matches the selected language
+        matched_voice = None
         for voice in voices:
             if self.language in voice.languages or self.language in voice.id:
-                engine.setProperty('voice', voice.id)
+                matched_voice = voice.id
                 break
 
+        if not matched_voice:
+            # Default fallback voice
+            matched_voice = voices[0].id
+
+        engine.setProperty('voice', matched_voice)
         engine.say(command)
         engine.runAndWait()
 
