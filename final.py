@@ -4,25 +4,25 @@ import pyttsx3
 import threading
 from tkinter import Text, END
 
+
 # Initialize CustomTkinter
 ctk.set_appearance_mode("Dark")  # Modes: "System" (default), "Dark", "Light"
 ctk.set_default_color_theme("blue")  # Themes: "blue" (default), "green", "dark-blue"
-
-
-# Function to convert text to speech
-def SpeakText(command):
-    engine = pyttsx3.init()
-    engine.say(command)
-    engine.runAndWait()
 
 
 # Main application class
 class ChatApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-
+        
         self.title("Voice-Enabled Chat App")
         self.geometry("500x600")
+
+        # Default language
+        self.language = "en-US"
+
+        # Create language selector
+        self.create_language_selector()
 
         # Chat display frame
         self.chat_frame = ctk.CTkFrame(self, width=480, height=450, corner_radius=10)
@@ -58,13 +58,28 @@ class ChatApp(ctk.CTk):
         self.voice_thread = threading.Thread(target=self.voice_recognition_loop, daemon=True)
         self.voice_thread.start()
 
+    def create_language_selector(self):
+        # Language selection dropdown
+        self.language_var = ctk.StringVar(value="en-US")  # Default English
+        self.language_menu = ctk.CTkOptionMenu(
+            self, 
+            values=["en-US", "zh-CN", "fr-FR", "ja-JP"],  # Available languages
+            variable=self.language_var,
+            command=self.change_language  # Callback when language changes
+        )
+        self.language_menu.pack(pady=5)
+
+    def change_language(self, lang):
+        self.language = lang  # Update language variable
+        self.display_message("System", f"Language switched to {lang}.", "system")
+
     def send_message(self, event=None):
         # Get message from the entry widget
         message = self.message_entry.get().strip()
         if message:
             self.display_message("You", message, "user")
             self.message_entry.delete(0, "end")  # Clear the entry field
-            SpeakText(message)
+            self.SpeakText(message)
 
             # Simulate a bot response
             self.after(1000, lambda: self.display_message("Bot", "I heard you!", "system"))
@@ -88,15 +103,28 @@ class ChatApp(ctk.CTk):
                     # Listen for user speech
                     audio = recognizer.listen(source)
 
-                    # Recognize speech using Google
-                    MyText = recognizer.recognize_google(audio).lower()
+                    # Recognize speech using the selected language
+                    MyText = recognizer.recognize_google(audio, language=self.language).lower()
                     self.display_message("You (Voice)", MyText, "user")
-                    SpeakText(MyText)
+                    self.SpeakText(MyText)
 
                 except sr.UnknownValueError:
                     self.display_message("System", "Sorry, I did not understand that.", "system")
                 except sr.RequestError as e:
                     self.display_message("System", f"API error: {e}", "system")
+
+    def SpeakText(self, command):
+        engine = pyttsx3.init()
+        voices = engine.getProperty('voices')
+
+        # Set voice to match the selected language
+        for voice in voices:
+            if self.language in voice.languages or self.language in voice.id:
+                engine.setProperty('voice', voice.id)
+                break
+
+        engine.say(command)
+        engine.runAndWait()
 
 
 # Run the application
