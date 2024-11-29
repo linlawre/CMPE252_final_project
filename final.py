@@ -1,10 +1,11 @@
 import customtkinter as ctk
 import speech_recognition as sr
-import pyttsx3
+from gtts import gTTS
+import os
+from playsound import playsound
 import threading
 from tkinter import Text, END
 from ollama import chat
-
 
 # Initialize CustomTkinter
 ctk.set_appearance_mode("Dark")  # Modes: "System" (default), "Dark", "Light"
@@ -21,9 +22,6 @@ class ChatApp(ctk.CTk):
 
         # Default language
         self.language = "en-US"
-
-        # Create language selector
-        self.create_language_selector()
 
         # Chat display frame
         self.chat_frame = ctk.CTkFrame(self, width=480, height=450, corner_radius=10)
@@ -55,9 +53,13 @@ class ChatApp(ctk.CTk):
         )
         self.send_button.pack(side="right", padx=5, pady=5)
 
+        # Create language selector (after initializing chat_area)
+        self.create_language_selector()
+
         # Start voice recognition in a separate thread
         self.voice_thread = threading.Thread(target=self.voice_recognition_loop, daemon=True)
         self.voice_thread.start()
+
 
     def create_language_selector(self):
         # Language selection dropdown
@@ -70,20 +72,27 @@ class ChatApp(ctk.CTk):
         )
         self.language_menu.pack(pady=5)
 
+        # Display current language
+        self.display_message("System", "Default language is English (US). You can change it using the dropdown menu.", "system")
+
     def change_language(self, lang):
         self.language = lang  # Update language variable
-        self.display_message("System", f"Language switched to {lang}.", "system")
+        language_map = {
+            "en-US": "English (United States)",
+            "zh-CN": "Chinese (Simplified)",
+            "vi-VN": "Vietnamese",
+            "ja-JP": "Japanese"
+        }
+        language_name = language_map.get(lang, lang)
+        self.display_message("System", f"Language switched to {language_name}.", "system")
 
     def send_message(self, event=None):
         # Get message from the entry widget
         message = self.message_entry.get().strip()
 
-
         if message:
             self.display_message("You", message, "user")
             self.message_entry.delete(0, "end")  # Clear the entry field
-
-
 
             self.SpeakText(message)
 
@@ -112,16 +121,19 @@ class ChatApp(ctk.CTk):
                     # Recognize speech using the selected language
                     MyText = recognizer.recognize_google(audio, language=self.language).lower()
 
-
-                    stream = chat(
+                    # Use Ollama API for response in the selected language
+                    response = chat(
                         model='llama3',
-                        messages=[{'role': 'user', 'content': MyText}],
+                        messages=[{'role': 'user', 'content': f"{MyText}. Please respond in {self.language}"}]
                     )
 
-
+                    # Extract and display response
+                    bot_message = response['message']['content']
                     self.display_message("You (Voice)", MyText, "user")
-                    self.display_message("System", stream['message']['content'], "system")
-                    self.SpeakText(stream['message']['content'])
+                    self.display_message("Bot", bot_message, "system")
+
+                    # Speak the response
+                    self.SpeakText(bot_message)
 
                 except sr.UnknownValueError:
                     self.display_message("System", "Sorry, I did not understand that.", "system")
@@ -129,23 +141,19 @@ class ChatApp(ctk.CTk):
                     self.display_message("System", f"API error: {e}", "system")
 
     def SpeakText(self, command):
-        engine = pyttsx3.init()
-        voices = engine.getProperty('voices')
+        try:
+            # Use gTTS to generate speech
+            tts = gTTS(text=command, lang=self.language.split('-')[0])  # Use the first part of the language code
+            audio_file = "temp_audio.mp3"
+            tts.save(audio_file)
 
-        # Find a voice that matches the selected language
-        matched_voice = None
-        for voice in voices:
-            if self.language in voice.languages or self.language in voice.id:
-                matched_voice = voice.id
-                break
+            # Play the audio
+            playsound(audio_file)
 
-        if not matched_voice:
-            # Default fallback voice
-            matched_voice = voices[0].id
-
-        engine.setProperty('voice', matched_voice)
-        engine.say(command)
-        engine.runAndWait()
+            # Clean up the temporary audio file
+            os.remove(audio_file)
+        except Exception as e:
+            self.display_message("System", f"Error in text-to-speech: {str(e)}", "system")
 
 
 # Run the application
