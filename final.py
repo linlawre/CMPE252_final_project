@@ -19,7 +19,7 @@ from langchain.retrievers.multi_query import MultiQueryRetriever
 
 
 # Step 1: Extract text from the entire PDF
-pdf_dir = "PDF"
+pdf_dir = "database"
 documents = []  # Initialize a list to store Document objects
 
 # index = 0
@@ -28,7 +28,7 @@ if os.path.exists(pdf_dir) and os.path.isdir(pdf_dir):
 
     for pdf_file in pdf_files:
 
-        pdf_document = fitz.open("./PDF/" + pdf_file)
+        pdf_document = fitz.open("./database/" + pdf_file)
 
 
         total_pages = len(pdf_document)

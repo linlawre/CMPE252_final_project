@@ -1,7 +1,11 @@
 # CMPE252_final_project
 
 ```bash
-pip install pyttsx3 pyaudio speechrecognition customtkinter
+pip install -r requirement.txt
+```
+
+```bash
+pip install pyttsx3 pyaudio speechrecognition customtkinter fitz
 ```
 ```bash
 pip install gtts
