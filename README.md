@@ -13,3 +13,12 @@ pip install gtts
 ```bash
 pip install playsound==1.2.2
 ```
+
+```bash
+pip install pymupdf
+```
+```bash
+pip install langchain_ollama
+pip install --upgrade langchain
+pip install langchain_community
+```
