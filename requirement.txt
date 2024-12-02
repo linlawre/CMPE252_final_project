@@ -17,5 +17,3 @@ fitz
 customtkinter
 speech_recognition
 pyttsx3
-threading
-tkinter
