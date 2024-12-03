@@ -15,5 +15,5 @@ Pillow
 numpy
 fitz
 customtkinter
-speech_recognition
+speechrecognition==3.10.4
 pyttsx3
