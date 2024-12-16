@@ -255,3 +255,106 @@ class ChatApp(ctk.CTk):
 if __name__ == "__main__":
     app = ChatApp()
     app.mainloop()
+
+
+
+
+# Results & accuracy operation
+def measure_latency(query):
+    import time
+    start_time = time.time()  # Record the start time
+
+    # Perform the query
+    response = chain.invoke(query)
+
+    end_time = time.time()  # Record the end time
+    latency = end_time - start_time
+
+    print(f"Query: {query}")
+    print(f"Response: {response}")
+    print(f"Latency: {latency:.2f} seconds")
+    return latency
+
+# Example usage
+query = "What is the capital of Japan?"
+latency = measure_latency(query)
+
+def test_speech_recognition(self, audio_clips, ground_truths):
+        print("\nTesting Speech Recognition:")
+        for i, audio in enumerate(audio_clips):
+            try:
+                recognized_text = self.recognizer.recognize_google(audio, language="en-US").lower()
+                error_rate = wer(ground_truths[i].lower(), recognized_text)
+                print(f"Audio {i + 1}: WER = {error_rate:.2f}")
+            except Exception as e:
+                print(f"Audio {i + 1}: Recognition failed with error: {e}")
+                
+                
+def test_speech_output(self, text_inputs, expected_languages):
+        print("\nTesting Speech Output:")
+        for i, text in enumerate(text_inputs):
+            detected_language = self.detect_language(text)
+            print(f"Text {i + 1}: Expected = {expected_languages[i]}, Detected = {detected_language}")
+            assert detected_language == expected_languages[i], "Language mismatch detected!"
+            
+
+import difflib
+
+# Ground truth sentences for speech recognition
+ground_truth_speech = [
+    "Hello, how are you?",
+    "What is the capital of Japan?",
+    "Translate this sentence to Vietnamese.",
+]
+
+# System output from speech recognition
+system_output_speech = [
+    "Hello how are you",
+    "What is the capital of Japan",
+    "Translate this sentence to Vietnamese",
+]
+
+def calculate_accuracy(ground_truth, system_output):
+    correct_words = 0
+    total_words = 0
+
+    for truth, output in zip(ground_truth, system_output):
+        truth_words = truth.split()
+        output_words = output.split()
+        matcher = difflib.SequenceMatcher(None, truth_words, output_words)
+
+        # Calculate correct words using SequenceMatcher
+        correct_words += sum(block.size for block in matcher.get_matching_blocks())
+        total_words += len(truth_words)
+
+    return (correct_words / total_words) * 100
+
+speech_accuracy = calculate_accuracy(ground_truth_speech, system_output_speech)
+print(f"Speech Recognition Accuracy: {speech_accuracy:.2f}%")
+
+# Ground truth responses for text output
+ground_truth_text = [
+    "The capital of Japan is Tokyo.",
+    "你好，请问有什么可以帮助你的？",  # Chinese: "Hello, how can I help you?"
+    "Hãy dịch câu này sang tiếng Việt.",  # Vietnamese: "Translate this sentence to Vietnamese."
+]
+
+# System output from text generation
+system_output_text = [
+    "The capital of Japan is Tokyo.",
+    "你好，请问有什么可以帮助你的？",
+    "Hãy dịch câu này sang tiếng Việt.",
+]
+
+def calculate_text_accuracy(ground_truth, system_output):
+    correct_sentences = 0
+    total_sentences = len(ground_truth)
+
+    for truth, output in zip(ground_truth, system_output):
+        if truth.strip() == output.strip():
+            correct_sentences += 1
+
+    return (correct_sentences / total_sentences) * 100
+
+text_accuracy = calculate_text_accuracy(ground_truth_text, system_output_text)
+print(f"Text Output Accuracy: {text_accuracy:.2f}%")
