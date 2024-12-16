@@ -279,17 +279,6 @@ def measure_latency(query):
 query = "What is the capital of Japan?"
 latency = measure_latency(query)
 
-def test_speech_recognition(self, audio_clips, ground_truths):
-        print("\nTesting Speech Recognition:")
-        for i, audio in enumerate(audio_clips):
-            try:
-                recognized_text = self.recognizer.recognize_google(audio, language="en-US").lower()
-                error_rate = wer(ground_truths[i].lower(), recognized_text)
-                print(f"Audio {i + 1}: WER = {error_rate:.2f}")
-            except Exception as e:
-                print(f"Audio {i + 1}: Recognition failed with error: {e}")
-                
-                
 def test_speech_output(self, text_inputs, expected_languages):
         print("\nTesting Speech Output:")
         for i, text in enumerate(text_inputs):
